@@ -1,0 +1,12 @@
+{
+    "/api": {
+        "target": "http://66.70.229.82:8181",
+        "secure": false,
+        "changeOrigin": true,
+        "logLevel": "debug",
+        "pathRewrite": {
+            "^/api": "http://66.70.229.82:8181"
+        }
+    }
+   
+}
