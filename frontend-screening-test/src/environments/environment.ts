@@ -3,7 +3,12 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  wsEndpoint: "ws://66.70.229.82:8181",
+  // wsEndpoint: "ws://66.70.229.82:8181",
+  reconnectInterval: 3,
+  apiEndpoint: "api",
+  loginAction: "Authorize"
 };
 
 /*
