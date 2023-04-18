@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { catchError, tap, switchAll, delayWhen, retryWhen } from 'rxjs/operators';
-import { EMPTY, Subject, Observable, OperatorFunction, timer, BehaviorSubject } from 'rxjs';
+import { EMPTY, Subject, Observable, OperatorFunction, timer, BehaviorSubject, Subscription } from 'rxjs';
 import { environment } from '../environments/environment';
 import { SocketMessage, SocketMessageType } from "../payload/socketmessage.payload";
 export const WS_ENDPOINT = environment.wsEndpoint;
@@ -15,66 +15,65 @@ export class WebSocketService {
     private messagesSubject$ = new BehaviorSubject<Observable<SocketMessage>>(EMPTY);
     public messages$ = this.messagesSubject$.pipe(switchAll() as OperatorFunction<any, SocketMessage>, catchError(e => { console.error; throw e }));
     public logoutSubject$ = new Subject();
+    private token?: string;
+
+
+
     constructor() {
+
     }
-    public connect(token: string, cfg: { reconnect: boolean } = { reconnect: false }) {
-        if (!this.socket$ || this.socket$.closed) {
-            this.socket$ = this.getNewWebSocket(token);
+    public setToken(token?: string) {
+        this.token = token;
+    }
+    public removeToken() {
+        delete this.token;
+    }
+    public connect(token?: string, cfg: { reconnect: boolean } = { reconnect: false }) {
+        if (token) {
+            this.setToken(token);
+            if (!this.socket$ || this.socket$.closed) {
+                this.socket$ = this.getNewWebSocket();
+            }
             const messages = this.socket$.pipe(cfg.reconnect ? this.reconnect : o => o,
                 tap({
                     error: error => console.log(error),
                 }), catchError(_ => EMPTY));
+
             this.messagesSubject$.next(messages);
             this.subscribe();
         }
 
     }
     private subscribe() {
-        // if (!this.socket$ || !this.socket$.closed) {
-        //     this.socket$.subscribe(p => console.log("socket sub: ", p));
         this.messages$.subscribe(p => {
             console.log(p);
             if (p.MessageType == SocketMessageType.LogOff) {
                 this.logoutSubject$.next();
             }
         });
-        //  this.sendMessage({MessageType: 1});
-        //this.sendMessage({ MessageType: 0 });
-        //  this.sendMessage({MessageType: 1});
-        // setTimeout(() => {
-        //     this.messages$.subscribe(p => console.log("message sub 2:", p));
-        //     this.sendMessage({ MessageType: 0 });
-        //     this.messages$.subscribe(p => console.log("message sub 3:", p));            
-        // }, 1000)
-
-        // }
     }
-    private getNewWebSocket(token: string) {
+    private getNewWebSocket() {
         return webSocket<SocketMessage>({
-            url: `${WS_ENDPOINT}?${token}`,
-            //serializer: msg => JSON.stringify(msg),
-            //deserializer: ({ data }) => JSON.parse(data),
-            // openObserver: {
-            //     next: () => {
-            //         this.socket$.subscribe();
-            //     }
-            // },
+            url: `${WS_ENDPOINT}?${this.token}`,
             closeObserver: {
                 next: () => {
                     console.log('[WebSocketService]: connection closed');
-                    this.connect(token, { reconnect: true });
+                    console.log("token: ", this.token);  
+                    this.socket$ = <WebSocketSubject<SocketMessage>><unknown>undefined;
+                    if (this.token) {
+                        this.connect(this.token, { reconnect: true });
+                    }
                 }
-            },
-        });
-
+            }
+        });      
     }
+
     sendMessage(msg: SocketMessage) {
         if (this.socket$) {
             this.socket$.next(msg);
         }
     }
     close() {
-
         this.socket$.complete();
     }
     private reconnect(observable: Observable<any>): Observable<any> {

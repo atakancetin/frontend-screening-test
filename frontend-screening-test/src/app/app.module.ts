@@ -5,8 +5,10 @@ import { AppComponent } from './app.component';
 import { LoginComponent } from '../login/login.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { WelcomeComponent } from '../welcome/welcome.component';
+import { AuthInterceptor } from 'src/interceptors/auth.interceptor';
+import { AuthGuard } from 'src/guards/auth.guard';
 
 @NgModule({
   declarations: [
@@ -21,7 +23,14 @@ import { WelcomeComponent } from '../welcome/welcome.component';
     CommonModule,
     HttpClientModule
   ],
-  providers: [],
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
+    },
+    AuthGuard
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

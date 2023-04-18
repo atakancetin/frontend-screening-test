@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { first } from 'rxjs/operators';
-import { SocketMessageType } from 'src/payload/socketmessage.payload';
 import { ApiService } from 'src/services/api.service';
 import { WebSocketService } from 'src/services/websocket.service';
 
@@ -31,7 +29,7 @@ export class LoginComponent implements OnInit {
       password: ['SeanPass', Validators.required]
     });
   }
-
+  
   // convenience getter for easy access to form fields
   get f() { return this.form.controls; }
 
@@ -48,8 +46,13 @@ export class LoginComponent implements OnInit {
 
     this.loading = true;
     this.api.getToken({ email: this.f.username.value, password: this.f.password.value }).subscribe(res => {
-      this.socket.connect(res.data.token);      
-      this.router.navigateByUrl("/welcome");
+      if(!res.error){
+        localStorage.setItem('token', res.data.token);
+        this.socket.connect(res.data.token);      
+        this.router.navigateByUrl("/welcome");
+      }else{
+        console.error(res.error);
+      }
     }, error => {
       this.loading = false;
       console.error(error);

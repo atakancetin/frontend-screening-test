@@ -8,7 +8,8 @@ export const environment = {
   // wsEndpoint: "ws://66.70.229.82:8181",
   reconnectInterval: 3,
   apiEndpoint: "api",
-  loginAction: "Authorize"
+  loginAction: "Authorize",
+  greetingAction: "GetGreeting"
 };
 
 /*
